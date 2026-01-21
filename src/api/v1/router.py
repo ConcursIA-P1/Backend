@@ -1,0 +1,31 @@
+from fastapi import APIRouter
+from .endpoints import health, questions, simulados, chat
+
+api_router = APIRouter()
+
+# Health check
+api_router.include_router(
+    health.router,
+    tags=["Health"]
+)
+
+# Questões
+api_router.include_router(
+    questions.router,
+    prefix="/questions",
+    tags=["Questões"]
+)
+
+# Simulados
+api_router.include_router(
+    simulados.router,
+    prefix="/simulados",
+    tags=["Simulados"]
+)
+
+# Chat RAG
+api_router.include_router(
+    chat.router,
+    prefix="/chat",
+    tags=["Chat RAG"]
+)

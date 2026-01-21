@@ -1,0 +1,28 @@
+# ConcursIA Backend - Dependências
+# Framework web
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Banco de dados
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Validação e configuração
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Utilitários
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# RAG (para integração futura com Chatbot)
+# langchain==0.1.0
+# langchain-community==0.0.10
+# langchain-google-genai==0.0.6
+# chromadb==0.4.22
+
+# Testes
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
