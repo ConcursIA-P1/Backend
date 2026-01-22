@@ -7,11 +7,23 @@ from .question import (
     QuestionListResponse,
     QuestionStatsResponse,
     Alternativa,
+    AlternativaResponse,
     DificuldadeEnum,
     MateriaEnum,
 )
 
+from .simulado import (
+    MateriaConfig,
+    SimuladoCreate,
+    SimuladoQuick,
+    SimuladoResponse,
+    SimuladoMinimal,
+    SimuladoListResponse,
+    SimuladoGenerateResult,
+)
+
 __all__ = [
+    # Question schemas
     "QuestionCreate",
     "QuestionUpdate",
     "QuestionFilter",
@@ -20,6 +32,15 @@ __all__ = [
     "QuestionListResponse",
     "QuestionStatsResponse",
     "Alternativa",
+    "AlternativaResponse",
     "DificuldadeEnum",
     "MateriaEnum",
+    # Simulado schemas
+    "MateriaConfig",
+    "SimuladoCreate",
+    "SimuladoQuick",
+    "SimuladoResponse",
+    "SimuladoMinimal",
+    "SimuladoListResponse",
+    "SimuladoGenerateResult",
 ]

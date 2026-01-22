@@ -28,20 +28,22 @@ class Question(Base):
     # Identificador
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     
-    # Conteúdo da questão
+    # Conteúdo da questão (OBRIGATÓRIOS)
     enunciado = Column(Text, nullable=False)
     alternativas = Column(JSONB, nullable=False)  # [{"letra": "A", "texto": "..."}, ...]
     gabarito = Column(String(1), nullable=False)  # A, B, C, D, E
+    ano = Column(Integer, nullable=False, index=True)
+    
+    # Conteúdo adicional (opcionais)
     explicacao = Column(Text, nullable=True)  # Resolução/comentário
     imagem_url = Column(String(255), nullable=True)  # URL de imagem auxiliar
     
-    # Metadados para filtros
-    ano = Column(Integer, nullable=False, index=True)
-    materia = Column(Enum(Materia), nullable=False, index=True)
+    # Metadados para filtros (opcionais)
+    materia = Column(Enum(Materia), nullable=True, index=True)
     topico = Column(String(100), nullable=True, index=True)
     subtopico = Column(String(100), nullable=True)
-    dificuldade = Column(Enum(Dificuldade), default=Dificuldade.MEDIA, index=True)
-    banca = Column(String(50), default="INEP", index=True)
+    dificuldade = Column(Enum(Dificuldade), nullable=True, index=True)
+    banca = Column(String(50), nullable=True, index=True)
     
     # Informações da prova original
     prova = Column(String(50), nullable=True)  # Ex: "ENEM 2023 - Dia 1"

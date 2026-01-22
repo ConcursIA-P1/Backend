@@ -89,37 +89,17 @@ class QuestionRepository:
     
     def _apply_filters(self, query, filters: QuestionFilter):
         """Aplica filtros à query."""
-        # Filtro por ano único
+        # Filtro por ano
         if filters.ano:
             query = query.filter(Question.ano == filters.ano)
         
-        # Filtro por múltiplos anos
-        if filters.anos:
-            query = query.filter(Question.ano.in_(filters.anos))
-        
-        # Filtro por matéria única
+        # Filtro por matéria
         if filters.materia:
             query = query.filter(Question.materia == filters.materia)
         
-        # Filtro por múltiplas matérias
-        if filters.materias:
-            query = query.filter(Question.materia.in_(filters.materias))
-        
-        # Filtro por tópico
+        # Filtro por tópico (busca parcial)
         if filters.topico:
             query = query.filter(Question.topico.ilike(f"%{filters.topico}%"))
-        
-        # Filtro por dificuldade
-        if filters.dificuldade:
-            query = query.filter(Question.dificuldade == filters.dificuldade)
-        
-        # Filtro por banca
-        if filters.banca:
-            query = query.filter(Question.banca.ilike(f"%{filters.banca}%"))
-        
-        # Busca textual no enunciado
-        if filters.search:
-            query = query.filter(Question.enunciado.ilike(f"%{filters.search}%"))
         
         return query
     

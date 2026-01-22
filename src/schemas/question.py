@@ -19,10 +19,16 @@ class MateriaEnum(str, Enum):
     MATEMATICA = "matematica"
 
 
-# Schema para alternativas
+# Schema para alternativas (request - com validação)
 class Alternativa(BaseModel):
     letra: str = Field(..., pattern="^[A-E]$", description="Letra da alternativa (A-E)")
     texto: str = Field(..., min_length=1, description="Texto da alternativa")
+
+
+# Schema para alternativas (response - sem validação estrita)
+class AlternativaResponse(BaseModel):
+    letra: str
+    texto: str
 
 
 # ============== REQUEST SCHEMAS ==============
@@ -30,16 +36,18 @@ class Alternativa(BaseModel):
 class QuestionCreate(BaseModel):
     """Schema para criação de questão."""
     
+    # Campos OBRIGATÓRIOS
     enunciado: str = Field(..., min_length=10, description="Texto do enunciado da questão")
     alternativas: list[Alternativa] = Field(..., min_length=2, max_length=5, description="Lista de alternativas")
     gabarito: str = Field(..., pattern="^[A-E]$", description="Letra da resposta correta")
-    
     ano: int = Field(..., ge=1990, le=2030, description="Ano da prova")
-    materia: MateriaEnum = Field(..., description="Área do conhecimento")
+    
+    # Campos opcionais
+    materia: Optional[MateriaEnum] = Field(None, description="Área do conhecimento")
     topico: Optional[str] = Field(None, max_length=100, description="Tópico específico")
     subtopico: Optional[str] = Field(None, max_length=100, description="Subtópico")
-    dificuldade: Optional[DificuldadeEnum] = Field(DificuldadeEnum.MEDIA, description="Nível de dificuldade")
-    banca: Optional[str] = Field("INEP", max_length=50, description="Banca organizadora")
+    dificuldade: Optional[DificuldadeEnum] = Field(None, description="Nível de dificuldade")
+    banca: Optional[str] = Field(None, max_length=50, description="Banca organizadora")
     
     prova: Optional[str] = Field(None, max_length=50, description="Identificador da prova")
     numero_questao: Optional[int] = Field(None, ge=1, description="Número original na prova")
@@ -70,11 +78,7 @@ class QuestionCreate(BaseModel):
                     {"letra": "E", "texto": "11"}
                 ],
                 "gabarito": "B",
-                "ano": 2023,
-                "materia": "matematica",
-                "topico": "funcoes",
-                "dificuldade": "facil",
-                "banca": "INEP"
+                "ano": 2023
             }
         }
 
@@ -104,14 +108,9 @@ class QuestionUpdate(BaseModel):
 class QuestionFilter(BaseModel):
     """Schema para filtros de busca."""
     
-    ano: Optional[int] = None
-    anos: Optional[list[int]] = None
-    materia: Optional[MateriaEnum] = None
-    materias: Optional[list[MateriaEnum]] = None
-    topico: Optional[str] = None
-    dificuldade: Optional[DificuldadeEnum] = None
-    banca: Optional[str] = None
-    search: Optional[str] = Field(None, description="Busca textual no enunciado")
+    ano: Optional[int] = Field(None, description="Filtrar por ano específico")
+    materia: Optional[MateriaEnum] = Field(None, description="Filtrar por matéria")
+    topico: Optional[str] = Field(None, description="Filtrar por tópico")
 
 
 # ============== RESPONSE SCHEMAS ==============
@@ -119,17 +118,19 @@ class QuestionFilter(BaseModel):
 class QuestionResponse(BaseModel):
     """Schema de resposta completa de questão."""
     
+    # Campos obrigatórios
     id: UUID
     enunciado: str
-    alternativas: list[Alternativa]
+    alternativas: list[AlternativaResponse]
     gabarito: str
-    
     ano: int
-    materia: MateriaEnum
+    
+    # Campos opcionais
+    materia: Optional[MateriaEnum] = None
     topico: Optional[str] = None
     subtopico: Optional[str] = None
-    dificuldade: DificuldadeEnum
-    banca: str
+    dificuldade: Optional[DificuldadeEnum] = None
+    banca: Optional[str] = None
     
     prova: Optional[str] = None
     numero_questao: Optional[int] = None
@@ -150,9 +151,9 @@ class QuestionMinimal(BaseModel):
     
     id: UUID
     enunciado: str = Field(..., description="Primeiros 150 caracteres do enunciado")
-    materia: MateriaEnum
     ano: int
-    dificuldade: DificuldadeEnum
+    materia: Optional[MateriaEnum] = None
+    dificuldade: Optional[DificuldadeEnum] = None
     
     class Config:
         from_attributes = True
