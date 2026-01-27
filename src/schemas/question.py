@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -66,8 +66,8 @@ class QuestionCreate(BaseModel):
                 raise ValueError(f"Gabarito '{v}' não está entre as alternativas: {letras}")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "enunciado": "Se f(x) = 2x + 3, qual o valor de f(5)?",
                 "alternativas": [
@@ -81,6 +81,7 @@ class QuestionCreate(BaseModel):
                 "ano": 2023
             }
         }
+    )
 
 
 class QuestionUpdate(BaseModel):
@@ -118,6 +119,9 @@ class QuestionFilter(BaseModel):
 class QuestionResponse(BaseModel):
     """Schema de resposta completa de questão."""
     
+    # Configuração crucial para ler objetos do SQLAlchemy
+    model_config = ConfigDict(from_attributes=True)
+
     # Campos obrigatórios
     id: UUID
     enunciado: str
@@ -137,26 +141,24 @@ class QuestionResponse(BaseModel):
     
     explicacao: Optional[str] = None
     imagem_url: Optional[str] = None
+    
+    imagem_base64: Optional[str] = None
+    
     tags: Optional[list[str]] = None
     
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class QuestionMinimal(BaseModel):
     """Schema resumido para listagens."""
+    model_config = ConfigDict(from_attributes=True)
     
     id: UUID
     enunciado: str = Field(..., description="Primeiros 150 caracteres do enunciado")
     ano: int
     materia: Optional[MateriaEnum] = None
     dificuldade: Optional[DificuldadeEnum] = None
-    
-    class Config:
-        from_attributes = True
 
 
 class QuestionListResponse(BaseModel):

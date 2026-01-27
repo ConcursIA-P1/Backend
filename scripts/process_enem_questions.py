@@ -33,13 +33,13 @@ def join_content(content_list: list[dict]) -> str:
         if item.get("type") == "text":
             texts.append(item.get("content", ""))
         elif item.get("type") == "image":
-            # Marca onde há imagem (pode ser processado depois)
+            # Mantém o marcador de imagem no texto para referência
             img_path = item.get("content", "")
-            texts.append(f"[IMAGEM: {img_path}]")
+            # Tenta limpar o caminho para ficar legível no texto
+            clean_name = os.path.basename(img_path)
+            texts.append(f"[IMAGEM: {clean_name}]")
     
-    # Junta e limpa espaços extras
     full_text = "".join(texts)
-    # Remove espaços múltiplos e tabs extras
     full_text = re.sub(r'\s+', ' ', full_text).strip()
     return full_text
 
@@ -47,7 +47,6 @@ def join_content(content_list: list[dict]) -> str:
 def extract_alternative_text(content_list: list[dict]) -> str:
     """Extrai texto de uma alternativa."""
     text = join_content(content_list)
-    # Remove tab e espaços iniciais das alternativas
     return text.lstrip('\t ').strip()
 
 
@@ -59,13 +58,28 @@ def find_correct_answer(alternatives: dict) -> Optional[str]:
     return None
 
 
+def extract_image_path(content_list: list[dict]) -> Optional[str]:
+    """
+    Procura por uma imagem no conteúdo e retorna o caminho relativo limpo.
+    Ex: output_2017_d1_prova/img/question-16.png
+    """
+    for item in content_list:
+        if item.get("type") == "image":
+            raw_path = item.get("content", "")
+            # Regex para pegar apenas a parte 'output_XXXX...' do caminho
+            # Isso remove o '/home/usuario/...' que vem do JSON original
+            match = re.search(r'(output_\d{4}_d\d_prova/img/.*)', raw_path)
+            if match:
+                return match.group(1)
+    return None
+
+
 def process_question(question: dict, ano: int, dia: int, prova_folder: str) -> dict:
     """Processa uma questão para o formato do banco de dados."""
     
-    # Juntar enunciado
     enunciado = join_content(question.get("content", []))
+    imagem_url = extract_image_path(question.get("content", []))
     
-    # Processar alternativas
     raw_alternatives = question.get("alternatives", {})
     alternativas = []
     
@@ -78,10 +92,8 @@ def process_question(question: dict, ano: int, dia: int, prova_folder: str) -> d
             "texto": texto
         })
     
-    # Encontrar gabarito
     gabarito = find_correct_answer(raw_alternatives)
     
-    # Montar questão processada
     processed = {
         "enunciado": enunciado,
         "alternativas": alternativas,
@@ -90,12 +102,11 @@ def process_question(question: dict, ano: int, dia: int, prova_folder: str) -> d
         "prova": f"ENEM {ano} - Dia {dia}",
         "numero_questao": question.get("number"),
         "banca": "INEP",
-        # Campos opcionais (podem ser preenchidos depois)
         "materia": None,
         "topico": None,
         "dificuldade": None,
         "explicacao": None,
-        "imagem_url": None,
+        "imagem_url": imagem_url, # Agora estamos salvando o caminho aqui!
         "tags": None
     }
     
@@ -107,7 +118,6 @@ def process_all_exams(data_dir: str) -> list[dict]:
     all_questions = []
     data_path = Path(data_dir)
     
-    # Encontrar todas as pastas de prova
     exam_folders = sorted([
         d for d in data_path.iterdir() 
         if d.is_dir() and d.name.startswith("output_")
@@ -139,7 +149,6 @@ def process_all_exams(data_dir: str) -> list[dict]:
             try:
                 processed = process_question(question, ano, dia, folder.name)
                 
-                # Validar questão mínima
                 if processed["enunciado"] and processed["alternativas"] and processed["gabarito"]:
                     all_questions.append(processed)
                 else:
@@ -151,7 +160,6 @@ def process_all_exams(data_dir: str) -> list[dict]:
 
 
 def main():
-    # Caminho do diretório data
     script_dir = Path(__file__).resolve().parent
     project_root = script_dir.parent
     data_dir = project_root / "data"
@@ -162,7 +170,6 @@ def main():
     print(f"Diretório de dados: {data_dir}")
     print()
     
-    # Processar todas as provas
     all_questions = process_all_exams(data_dir)
     
     print()
@@ -170,31 +177,11 @@ def main():
     print(f"TOTAL DE QUESTÕES PROCESSADAS: {len(all_questions)}")
     print("=" * 60)
     
-    # Estatísticas por ano
-    by_year = {}
-    for q in all_questions:
-        ano = q["ano"]
-        by_year[ano] = by_year.get(ano, 0) + 1
-    
-    print("\nQuestões por ano:")
-    for ano in sorted(by_year.keys()):
-        print(f"  {ano}: {by_year[ano]} questões")
-    
-    # Salvar arquivo processado
     output_file = data_dir / "questions_processed.json"
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(all_questions, f, ensure_ascii=False, indent=2)
     
     print(f"\n✅ Arquivo salvo: {output_file}")
-    
-    # Mostrar exemplo de questão processada
-    if all_questions:
-        print("\n" + "=" * 60)
-        print("EXEMPLO DE QUESTÃO PROCESSADA:")
-        print("=" * 60)
-        example = all_questions[0]
-        print(json.dumps(example, ensure_ascii=False, indent=2)[:1500] + "...")
-
 
 if __name__ == "__main__":
     main()

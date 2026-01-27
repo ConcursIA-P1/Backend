@@ -39,11 +39,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
+volumes:
       - ./src:/app/src
       - ./alembic:/app/alembic
-    command: >
-      sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+command: >
+  sh -c "echo '🔄 Iniciando Setup Automático...' &&
+        alembic upgrade head && 
+        echo '1️⃣  Processando Dados Brutos...' &&
+        python scripts/process_enem_questions.py && 
+        echo '2️⃣  Classificando Questões...' &&
+        python scripts/classify_questions.py && 
+        echo '3️⃣  Populando Banco de Dados...' &&
+        python scripts/seed_questions.py && 
+        echo '✅ Setup Concluído! Iniciando Servidor...' &&
+        uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - concursia_network
     restart: unless-stopped

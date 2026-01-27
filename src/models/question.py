@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum
+import base64
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, LargeBinary
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from datetime import datetime
 import uuid
@@ -36,8 +37,18 @@ class Question(Base):
     
     # Conteúdo adicional (opcionais)
     explicacao = Column(Text, nullable=True)  # Resolução/comentário
+    imagem_blob = Column(LargeBinary, nullable=True) # Imagem em formato binário
     imagem_url = Column(String(255), nullable=True)  # URL de imagem auxiliar
-    
+
+    @property
+    def imagem_base64(self) -> str | None:
+        if self.imagem_blob:
+            # Converte bytes para string base64
+            encoded = base64.b64encode(self.imagem_blob).decode("utf-8")
+            # Retorna no formato Data URI
+            return f"data:image/png;base64,{encoded}"
+        return None
+
     # Metadados para filtros (opcionais)
     materia = Column(Enum(Materia), nullable=True, index=True)
     topico = Column(String(100), nullable=True, index=True)

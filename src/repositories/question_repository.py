@@ -35,6 +35,7 @@ class QuestionRepository:
             numero_questao=question_data.numero_questao,
             explicacao=question_data.explicacao,
             imagem_url=question_data.imagem_url,
+            imagem_blob=question_data.imagem_blob,
             tags=question_data.tags,
         )
         
