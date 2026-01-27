@@ -24,8 +24,8 @@ langchain-core==0.2.38
 langchain-huggingface==0.0.3
 langgraph==0.2.16
 chromadb==0.4.22
-transformers==4.36.0
-sentence-transformers==2.3.1
+transformers>=4.39.0
+sentence-transformers>=2.6.0
 
 # Testes
 pytest==7.4.4
