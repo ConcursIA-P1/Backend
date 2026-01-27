@@ -22,6 +22,11 @@ from .simulado import (
     SimuladoGenerateResult,
 )
 
+from .chat import (
+    ChatRequest,
+    ChatResponse,
+)
+
 __all__ = [
     # Question schemas
     "QuestionCreate",
@@ -43,4 +48,7 @@ __all__ = [
     "SimuladoMinimal",
     "SimuladoListResponse",
     "SimuladoGenerateResult",
+    # Chat schemas
+    "ChatRequest",
+    "ChatResponse",
 ]
