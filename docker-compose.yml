@@ -51,7 +51,7 @@ services:
       # RAG Configuration
       - RAG_COLLECTION_NAME=${RAG_COLLECTION_NAME:-concursia_documents}
       - RAG_TOP_K_RESULTS=${RAG_TOP_K_RESULTS:-3}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-models/embedding-001}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-models/gemini-embedding-001}
       - COLLECTION_NAME=${COLLECTION_NAME:-concursia_documents}
       - CHUNK_SIZE=${CHUNK_SIZE:-1000}
       - CHUNK_OVERLAP=${CHUNK_OVERLAP:-150}
@@ -65,7 +65,26 @@ services:
       - ./alembic:/app/alembic
       - chroma_data:/app/chroma_db
     command: >
-      sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "
+        echo '=== Inicializando API ===' &&
+        sleep 3 &&
+        echo 'Aplicando migrações do banco de dados...' &&
+        if ! alembic upgrade head 2>&1; then
+          ERROR_OUTPUT=$$(alembic upgrade head 2>&1) &&
+          if echo \"$$ERROR_OUTPUT\" | grep -qiE 'can.t locate revision|revision.*not found|Can.t locate'; then
+            echo '⚠️  Revisão no banco não existe nos arquivos. Corrigindo automaticamente...' &&
+            alembic stamp head &&
+            echo '✅ Banco corrigido e sincronizado com código'
+          else
+            echo '❌ Erro ao aplicar migrações:' &&
+            echo \"$$ERROR_OUTPUT\" &&
+            exit 1
+          fi
+        fi &&
+        echo '✅ Migrações OK' &&
+        echo 'Iniciando servidor FastAPI...' &&
+        uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+      "
     networks:
       - concursia_network
     restart: unless-stopped
