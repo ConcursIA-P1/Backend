@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # RAG Configuration
     RAG_COLLECTION_NAME: str = "concursia_documents"
     RAG_TOP_K_RESULTS: int = 3  # Número de chunks relevantes para retornar
-    EMBEDDING_MODEL: str = "models/embedding-001"  # Modelo de embedding
+    EMBEDDING_MODEL: str = "models/gemini-embedding-001"  # Modelo de embedding (embedding-001 foi descontinuado)
     COLLECTION_NAME: str = "concursia_documents"  # Nome da collection (alias para RAG_COLLECTION_NAME)
     
     # Configurações adicionais do .env

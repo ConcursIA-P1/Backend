@@ -35,17 +35,15 @@ class RAGService:
                 "GOOGLE_API_KEY não configurada. Configure a variável de ambiente GOOGLE_API_KEY."
             )
         
-        # Inicializar embeddings
-        # Nota: Se EMBEDDING_MODEL for diferente de models/embedding-001, 
-        # pode ser necessário usar outro provider (ex: HuggingFace)
+        # Inicializar embeddings (Google: models/gemini-embedding-001)
         embedding_model = settings.EMBEDDING_MODEL
+        if not embedding_model.startswith("models/"):
+            embedding_model = "models/gemini-embedding-001"
         
         # Configurações para tentar resolver problemas de DNS/gRPC
         embedding_kwargs = {
             "google_api_key": settings.GOOGLE_API_KEY,
             "request_timeout": 120,
-            # Usar transporte HTTP em vez de gRPC pode ajudar em alguns casos
-            # Mas a biblioteca atual não suporta isso diretamente
         }
         
         max_retries = 3
@@ -53,19 +51,10 @@ class RAGService:
         
         for attempt in range(max_retries):
             try:
-                if embedding_model.startswith("models/"):
-                    # Modelo do Google
-                    self.embeddings = GoogleGenerativeAIEmbeddings(
-                        model=embedding_model,
-                        **embedding_kwargs
-                    )
-                else:
-                    # Para outros modelos (ex: BAAI/bge-m3), usar Google por enquanto
-                    # TODO: Adicionar suporte para outros providers de embedding
-                    self.embeddings = GoogleGenerativeAIEmbeddings(
-                        model="models/embedding-001",
-                        **embedding_kwargs
-                    )
+                self.embeddings = GoogleGenerativeAIEmbeddings(
+                    model=embedding_model,
+                    **embedding_kwargs
+                )
                 # Se chegou aqui, sucesso!
                 break
             except Exception as e:
