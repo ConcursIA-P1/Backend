@@ -1,7 +1,14 @@
 from fastapi import APIRouter
-from .endpoints import health, questions, simulados, chat
+from .endpoints import health, questions, simulados, chat, auth
 
 api_router = APIRouter()
+
+# Autenticação
+api_router.include_router(
+    auth.router,
+    prefix="/auth",
+    tags=["Autenticação"]
+)
 
 # Health check
 api_router.include_router(

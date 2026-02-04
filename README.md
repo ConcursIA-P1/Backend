@@ -5,6 +5,7 @@ Backend da plataforma ConcursIA - Assistente de estudos com RAG para preparaçã
 ## 🚀 Início Rápido
 
 ### Pré-requisitos
+
 - Python 3.11+
 - Docker e Docker Compose
 - Git
@@ -12,21 +13,25 @@ Backend da plataforma ConcursIA - Assistente de estudos com RAG para preparaçã
 ### Configuração
 
 1. **Clone o repositório e acesse o diretório:**
+
    ```bash
    cd Backend
    ```
 
 2. **Copie o arquivo de variáveis de ambiente:**
+
    ```bash
    cp .env.example .env
    ```
 
 3. **Inicie o banco de dados PostgreSQL:**
+
    ```bash
    docker compose up -d db
    ```
 
 4. **Crie e ative o ambiente virtual:**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # Linux/Mac
@@ -34,16 +39,19 @@ Backend da plataforma ConcursIA - Assistente de estudos com RAG para preparaçã
    ```
 
 5. **Instale as dependências:**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 6. **Execute as migrations:**
+
    ```bash
    alembic upgrade head
    ```
 
 7. **Inicie o servidor de desenvolvimento:**
+
    ```bash
    uvicorn src.main:app --reload
    ```
@@ -85,6 +93,7 @@ Backend/
 ## 🛠️ Comandos Úteis
 
 ### Banco de Dados
+
 ```bash
 # Criar nova migration
 alembic revision --autogenerate -m "descrição da mudança"
@@ -97,6 +106,7 @@ alembic downgrade -1
 ```
 
 ### Docker
+
 ```bash
 # Subir apenas o banco
 docker compose up -d db

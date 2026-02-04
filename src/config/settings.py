@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
     
+    # Autenticação
+    SECRET_KEY: str = "your-secret-key-change-in-production"
+    
     # Banco de Dados PostgreSQL
     POSTGRES_USER: str = "concursia"
     POSTGRES_PASSWORD: str = "concursia_dev"
@@ -20,7 +23,7 @@ class Settings(BaseSettings):
     @property
     def DATABASE_URL(self) -> str:
         return (
-            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
     
