@@ -3,53 +3,50 @@ from functools import lru_cache
 
 from src.schemas.chat import ChatRequest, ChatResponse
 from src.services.rag_service import RAGService
+from src.config import settings
 
 
 router = APIRouter()
+_RAG_INIT_ERROR: str | None = None
+
+class LocalChatFallback:
+    """Fallback simples para quando o RAG não está configurado."""
+
+    def query(self, message: str):
+        text = message.lower().strip()
+        if "enem" in text and "data" in text:
+            return {
+                "answer": "Ainda não tenho acesso às datas oficiais. Confira o site oficial do INEP para datas atualizadas.",
+                "sources": None
+            }
+        if "matéria" in text or "materia" in text:
+            return {
+                "answer": "As áreas do ENEM são: Linguagens, Matemática, Ciências Humanas e Ciências da Natureza.",
+                "sources": None
+            }
+        return {
+            "answer": (
+                "Assistente offline: o serviço de IA não está configurado no servidor. "
+                "Configure a variável GOOGLE_API_KEY para respostas avançadas."
+            ),
+            "sources": None
+        }
 
 
 @lru_cache()
-def get_rag_service() -> RAGService:
+def get_rag_service():
     """Dependency para injetar o serviço RAG (singleton)."""
+    global _RAG_INIT_ERROR
     try:
         return RAGService()
     except ValueError as e:
-        # Se API key não estiver configurada, levantar HTTPException
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        # Se API key não estiver configurada, usar fallback local
+        _RAG_INIT_ERROR = f"RAG init error: {str(e)}"
+        return LocalChatFallback()
     except Exception as e:
-        error_msg = str(e)
-        error_lower = error_msg.lower()
-        
-        # Detectar diferentes tipos de erro e retornar mensagens apropriadas
-        if "429" in error_msg or "quota" in error_lower or "exceeded" in error_lower:
-            detail = (
-                "Quota da API do Google excedida. "
-                "Verifique seu plano e limites de uso em: https://ai.google.dev/gemini-api/docs/rate-limits"
-            )
-            status_code = 429
-        elif "dns" in error_lower or "generativelanguage.googleapis.com" in error_lower:
-            detail = (
-                "A API do Google não está acessível. "
-                "Verifique: 1) Conexão com internet 2) Firewall/VPN 3) DNS."
-            )
-            status_code = 503
-        elif "timeout" in error_lower:
-            detail = "Timeout ao conectar à API do Google. Verifique sua conexão."
-            status_code = 503
-        elif "api key" in error_lower or "authentication" in error_lower or "401" in error_msg or "403" in error_msg:
-            detail = f"Erro de autenticação: {error_msg}"
-            status_code = 401
-        else:
-            detail = f"Erro ao inicializar serviço RAG: {error_msg}"
-            status_code = 503
-        
-        raise HTTPException(
-            status_code=status_code,
-            detail=detail
-        )
+        # Qualquer outro erro: usar fallback local
+        _RAG_INIT_ERROR = f"RAG init error: {str(e)}"
+        return LocalChatFallback()
 
 
 @router.post(
@@ -84,9 +81,11 @@ def chat_with_rag(
             sources=result.get("sources")
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao processar pergunta: {str(e)}"
+        # Em caso de erro, responder com fallback amigável ao invés de erro 500
+        fallback = LocalChatFallback().query(request.message)
+        return ChatResponse(
+            answer=fallback["answer"],
+            sources=fallback.get("sources")
         )
 
 
@@ -107,10 +106,22 @@ def get_rag_info(
     - Caminho do ChromaDB
     """
     try:
-        info = rag_service.get_collection_info()
-        return info
+        if hasattr(rag_service, "get_collection_info"):
+            info = rag_service.get_collection_info()
+            info.update({
+                "rag_mode": "google",
+                "google_api_key_set": bool(settings.GOOGLE_API_KEY)
+            })
+            return info
+        return {
+            "rag_mode": "fallback",
+            "google_api_key_set": bool(settings.GOOGLE_API_KEY),
+            "message": "Serviço RAG indisponível, usando fallback local.",
+            "error": _RAG_INIT_ERROR
+        }
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao obter informações: {str(e)}"
-        )
+        return {
+            "rag_mode": "error",
+            "google_api_key_set": bool(settings.GOOGLE_API_KEY),
+            "detail": f"Erro ao obter informações: {str(e)}"
+        }

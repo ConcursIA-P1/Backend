@@ -5,12 +5,16 @@ uvicorn[standard]==0.27.0
 
 # Banco de dados
 sqlalchemy==2.0.25
-psycopg2-binary==2.9.9
+psycopg[binary]==3.1.18
 alembic==1.13.1
 
 # Validação e configuração
-pydantic==2.5.3
+pydantic>=2.7.4,<3.0.0
 pydantic-settings==2.1.0
+pydantic[email]
+
+# Autenticação
+PyJWT==2.11.0
 
 # Utilitários
 python-dotenv==1.0.0
