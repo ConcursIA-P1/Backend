@@ -1,0 +1,6 @@
+# ConcursIA Backend - Dependências de desenvolvimento/testes
+-r requirements.txt
+
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0

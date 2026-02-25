@@ -3,54 +3,56 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    """Configurações da aplicação carregadas de variáveis de ambiente."""
-    
+    """
+    Configurações da aplicação carregadas de variáveis de ambiente.
+    Todas as variáveis são lidas do .env automaticamente pelo pydantic-settings.
+    """
+
     # Aplicação
-    APP_NAME: str = "ConcursIA API"
-    APP_VERSION: str = "0.1.0"
-    DEBUG: bool = True
-    
+    APP_NAME: str
+    APP_VERSION: str
+    DEBUG: bool
+
     # Autenticação
-    SECRET_KEY: str = "your-secret-key-change-in-production"
-    
+    SECRET_KEY: str
+
     # Banco de Dados PostgreSQL
-    POSTGRES_USER: str = "concursia"
-    POSTGRES_PASSWORD: str = "concursia_dev"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "concursia_db"
-    
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
+
     @property
     def DATABASE_URL(self) -> str:
         return (
             f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
-    
-    # RAG (para integração com o Chatbot)
-    OPENAI_API_KEY: str = ""
+
+    # RAG e LLM
     GOOGLE_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-pro"  # Modelo do Gemini a usar
-    
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    EMBEDDING_MODEL: str = "models/text-embedding-004"
+
     # ChromaDB
     CHROMA_DB_PATH: str = "./chroma_db"
     CHROMA_API_KEY: str = ""
     CHROMA_TENANT: str = ""
     CHROMA_DATABASE: str = ""
     USE_CHROMA_CLOUD: bool = False
-    
+
     # RAG Configuration
     RAG_COLLECTION_NAME: str = "concursia_documents"
-    RAG_TOP_K_RESULTS: int = 3  # Número de chunks relevantes para retornar
-    EMBEDDING_MODEL: str = "models/embedding-001"  # Modelo de embedding
-    COLLECTION_NAME: str = "concursia_documents"  # Nome da collection (alias para RAG_COLLECTION_NAME)
-    
-    # Configurações adicionais do .env
+    COLLECTION_NAME: str = "concursia_documents"
+    RAG_TOP_K_RESULTS: int = 2
+    RAG_MAX_CHUNK_CHARS: int = 500
+    RAG_MAX_OUTPUT_TOKENS: int = 512
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 150
     MAX_DOCUMENTS: int = 5
     BATCH_SIZE: int = 50
-    
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

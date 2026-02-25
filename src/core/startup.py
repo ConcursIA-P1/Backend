@@ -27,6 +27,7 @@ def init_db():
         from src.models.user import User  # noqa: F401
         from src.models.question import Question  # noqa: F401
         from src.models.simulado import Simulado  # noqa: F401
+        from src.models.chat_message import ChatMessage  # noqa: F401
         from src.config.database import Base
         
         Base.metadata.create_all(bind=engine)

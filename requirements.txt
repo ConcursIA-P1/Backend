@@ -20,18 +20,8 @@ PyJWT==2.11.0
 python-dotenv==1.0.0
 python-multipart==0.0.6
 
-# RAG (para integração com Chatbot)
-langchain==0.2.16
+# RAG (serviço simplificado com Google Gemini)
 langchain-community==0.2.16
 langchain-google-genai==1.0.7
 langchain-core==0.2.38
-langchain-huggingface==0.0.3
-langgraph==0.2.16
-chromadb==0.4.22
-transformers>=4.39.0
-sentence-transformers>=2.6.0
-
-# Testes
-pytest==7.4.4
-pytest-asyncio==0.23.3
-httpx==0.26.0
+chromadb>=0.6.0
