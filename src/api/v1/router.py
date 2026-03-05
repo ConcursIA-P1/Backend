@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .endpoints import health, questions, simulados, chat, auth
+from .endpoints import health, questions, simulados, chat, auth, turmas
 
 api_router = APIRouter()
 
@@ -35,4 +35,11 @@ api_router.include_router(
     chat.router,
     prefix="/chat",
     tags=["Chat RAG"]
+)
+
+# Turmas
+api_router.include_router(
+    turmas.router,
+    prefix="/turmas",
+    tags=["Turmas"]
 )
