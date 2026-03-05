@@ -14,6 +14,13 @@ turma_alunos = Table(
     Column("aluno_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
 )
 
+turma_simulados = Table(
+    "turma_simulados",
+    Base.metadata,
+    Column("turma_id", UUID(as_uuid=True), ForeignKey("turmas.id", ondelete="CASCADE"), primary_key=True),
+    Column("simulado_id", UUID(as_uuid=True), ForeignKey("simulados.id", ondelete="CASCADE"), primary_key=True),
+)
+
 
 class Turma(Base):
     """Modelo de turma."""
@@ -30,7 +37,7 @@ class Turma(Base):
 
     professor = relationship("User", foreign_keys=[professor_id])
     alunos = relationship("User", secondary=turma_alunos)
+    simulados = relationship("Simulado", secondary=turma_simulados)
 
     def __repr__(self):
         return f"<Turma(id={self.id}, nome={self.nome})>"
-

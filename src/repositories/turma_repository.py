@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.models.turma import Turma
 from src.models.user import User
+from src.models.simulado import Simulado
 
 
 class TurmaRepository:
@@ -40,5 +41,13 @@ class TurmaRepository:
                 turma.alunos.append(aluno)
         self.db.commit()
         self.db.refresh(turma)
+        return turma
+
+    def add_simulado(self, turma: Turma, simulado: Simulado) -> Turma:
+        """Atribui um simulado à turma."""
+        if all(s.id != simulado.id for s in turma.simulados):
+            turma.simulados.append(simulado)
+            self.db.commit()
+            self.db.refresh(turma)
         return turma
 

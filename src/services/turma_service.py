@@ -7,6 +7,7 @@ from src.models.turma import Turma
 from src.models.user import UserRole
 from src.repositories.turma_repository import TurmaRepository
 from src.repositories.user_repository import UserRepository
+from src.repositories.simulado_repository import SimuladoRepository
 from src.schemas.turma import TurmaCreate
 
 
@@ -17,6 +18,7 @@ class TurmaService:
         self.db = db
         self.repository = TurmaRepository(db)
         self.user_repository = UserRepository(db)
+        self.simulado_repository = SimuladoRepository(db)
 
     def create(self, data: TurmaCreate) -> Turma:
         """Cria uma nova turma."""
@@ -25,7 +27,7 @@ class TurmaService:
             professor = self.user_repository.get_by_id(data.professor_id)
             if not professor:
                 raise ValueError(f"Professor com ID {data.professor_id} não encontrado")
-            if professor.role != UserRole.PROFESSOR:
+            if str(professor.role) != UserRole.PROFESSOR.value:
                 raise ValueError("Usuário informado não é um professor")
 
         return self.repository.create(nome=data.nome, professor=professor)
@@ -43,7 +45,7 @@ class TurmaService:
         professor = self.user_repository.get_by_id(professor_id)
         if not professor:
             raise ValueError(f"Professor com ID {professor_id} não encontrado")
-        if professor.role != UserRole.PROFESSOR:
+        if str(professor.role) != UserRole.PROFESSOR.value:
             raise ValueError("Usuário informado não é um professor")
 
         return self.repository.set_professor(turma, professor)
@@ -59,9 +61,21 @@ class TurmaService:
             aluno = self.user_repository.get_by_id(aluno_id)
             if not aluno:
                 raise ValueError(f"Aluno com ID {aluno_id} não encontrado")
-            if aluno.role != UserRole.ALUNO:
+            if str(aluno.role) != UserRole.ALUNO.value:
                 raise ValueError("Usuário informado não é um aluno")
             alunos.append(aluno)
 
         return self.repository.add_alunos(turma, alunos)
+
+    def atribuir_simulado(self, turma_id: UUID, simulado_id: UUID) -> Optional[Turma]:
+        """Atribui um simulado a uma turma."""
+        turma = self.repository.get_by_id(turma_id)
+        if not turma:
+            return None
+
+        simulado = self.simulado_repository.get_by_id(simulado_id)
+        if not simulado:
+            raise ValueError(f"Simulado com ID {simulado_id} não encontrado")
+
+        return self.repository.add_simulado(turma, simulado)
 
