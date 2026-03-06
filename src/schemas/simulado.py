@@ -120,7 +120,27 @@ class SimuladoQuick(BaseModel):
         }
 
 
+class SimuladoSubmitRequest(BaseModel):
+    """Payload para registrar entrega de um simulado."""
+
+    answers: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapa de respostas no formato {question_id: alternativa}",
+    )
+
+
 # ============== RESPONSE SCHEMAS ==============
+
+class SimuladoResultado(BaseModel):
+    """Resultado consolidado de uma tentativa de simulado."""
+
+    score: int
+    total_questoes: int
+    answered_count: int
+    unanswered_count: int
+    percentual: int
+    submitted_at: datetime
+
 
 class SimuladoResponse(BaseModel):
     """Response completa de um simulado."""
@@ -135,6 +155,7 @@ class SimuladoResponse(BaseModel):
     # Estatísticas
     total_questoes: int
     questoes_por_materia: dict[str, int]
+    resultado: Optional[SimuladoResultado] = None
     
     created_at: datetime
     
@@ -148,6 +169,7 @@ class SimuladoMinimal(BaseModel):
     id: UUID
     titulo: Optional[str] = None
     total_questoes: int
+    resultado: Optional[SimuladoResultado] = None
     created_at: datetime
     
     class Config:
@@ -174,3 +196,10 @@ class SimuladoGenerateResult(BaseModel):
         default_factory=list,
         description="Alertas sobre questões não encontradas ou distribuição diferente"
     )
+
+
+class SimuladoSubmitResponse(BaseModel):
+    """Response da entrega de um simulado."""
+
+    simulado_id: UUID
+    resultado: SimuladoResultado

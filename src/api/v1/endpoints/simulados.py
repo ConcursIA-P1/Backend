@@ -11,6 +11,8 @@ from src.schemas.simulado import (
     SimuladoResponse,
     SimuladoListResponse,
     SimuladoGenerateResult,
+    SimuladoSubmitRequest,
+    SimuladoSubmitResponse,
 )
 
 router = APIRouter()
@@ -88,6 +90,29 @@ def generate_quick_simulado(
     """
     service = SimuladoService(db)
     return service.generate_quick_simulado(data)
+
+
+@router.post(
+    "/{simulado_id}/submit",
+    response_model=SimuladoSubmitResponse,
+    summary="Registra resultado de um simulado",
+)
+def submit_simulado(
+    simulado_id: UUID,
+    payload: SimuladoSubmitRequest,
+    db: Session = Depends(get_db),
+):
+    """Salva o resultado da tentativa com base no gabarito oficial."""
+    service = SimuladoService(db)
+    result = service.submit_result(simulado_id, payload.answers)
+
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Simulado com ID {simulado_id} não encontrado",
+        )
+
+    return result
 
 
 # ============== ENDPOINTS CRUD ==============

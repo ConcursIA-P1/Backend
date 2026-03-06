@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
 import math
+from datetime import datetime, timezone
 
 from src.repositories.simulado_repository import SimuladoRepository
 from src.models.simulado import Simulado
@@ -13,6 +14,8 @@ from src.schemas.simulado import (
     SimuladoMinimal,
     SimuladoListResponse,
     SimuladoGenerateResult,
+    SimuladoResultado,
+    SimuladoSubmitResponse,
     MateriaConfig,
 )
 from src.schemas.question import MateriaEnum
@@ -158,6 +161,60 @@ class SimuladoService:
         questoes_por_materia = self._count_by_materia(simulado.questions)
         
         return self._to_response(simulado, questoes_por_materia)
+
+    def submit_result(
+        self,
+        simulado_id: UUID,
+        answers: dict[str, str],
+    ) -> Optional[SimuladoSubmitResponse]:
+        """Registra o resultado de uma tentativa de simulado."""
+        simulado = self.repository.get_by_id(simulado_id)
+        if not simulado:
+            return None
+
+        questions = simulado.questions or []
+        total = len(questions)
+
+        normalized_answers: dict[str, str] = {
+            str(question_id): value.strip().upper()
+            for question_id, value in (answers or {}).items()
+            if value
+        }
+
+        score = 0
+        answered_count = 0
+        for q in questions:
+            answer = normalized_answers.get(str(q.id))
+            if answer:
+                answered_count += 1
+                if answer == q.gabarito:
+                    score += 1
+
+        unanswered_count = max(total - answered_count, 0)
+        percentual = round((score / total) * 100) if total > 0 else 0
+        submitted_at = datetime.now(timezone.utc)
+
+        resultado = {
+            "score": score,
+            "total_questoes": total,
+            "answered_count": answered_count,
+            "unanswered_count": unanswered_count,
+            "percentual": percentual,
+            "submitted_at": submitted_at.isoformat(),
+        }
+
+        updated = self.repository.save_result(simulado_id, resultado)
+        if not updated:
+            return None
+
+        parsed_result = self._extract_resultado(updated)
+        if not parsed_result:
+            return None
+
+        return SimuladoSubmitResponse(
+            simulado_id=updated.id,
+            resultado=parsed_result,
+        )
     
     def list_simulados(
         self,
@@ -179,6 +236,7 @@ class SimuladoService:
                 id=s.id,
                 titulo=s.titulo,
                 total_questoes=len(s.questions),
+                resultado=self._extract_resultado(s),
                 created_at=s.created_at
             )
             for s in simulados
@@ -224,5 +282,18 @@ class SimuladoService:
             ],
             total_questoes=len(simulado.questions),
             questoes_por_materia=questoes_por_materia,
+            resultado=self._extract_resultado(simulado),
             created_at=simulado.created_at
         )
+
+    def _extract_resultado(self, simulado: Simulado) -> Optional[SimuladoResultado]:
+        """Extrai resultado persistido de filtros_aplicados, quando existir."""
+        filtros = simulado.filtros_aplicados or {}
+        resultado = filtros.get("resultado") if isinstance(filtros, dict) else None
+        if not resultado:
+            return None
+
+        try:
+            return SimuladoResultado.model_validate(resultado)
+        except Exception:
+            return None

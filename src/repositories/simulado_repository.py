@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
 from uuid import UUID
-import math
 
 from src.models.simulado import Simulado
 from src.models.question import Question, Materia
@@ -80,6 +79,22 @@ class SimuladoRepository:
         self.db.delete(db_simulado)
         self.db.commit()
         return True
+
+    def save_result(self, simulado_id: UUID, resultado: dict) -> Optional[Simulado]:
+        """Persiste o resultado mais recente de um simulado em filtros_aplicados."""
+        db_simulado = self.get_by_id(simulado_id)
+
+        if not db_simulado:
+            return None
+
+        filtros = dict(db_simulado.filtros_aplicados or {})
+        filtros["resultado"] = resultado
+        db_simulado.filtros_aplicados = filtros
+
+        self.db.add(db_simulado)
+        self.db.commit()
+        self.db.refresh(db_simulado)
+        return db_simulado
     
     # ============== QUESTÕES ==============
     

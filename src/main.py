@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import logging
+from pathlib import Path
 
 from src.config import settings
 from src.api.v1.router import api_router
@@ -67,6 +69,11 @@ async def startup_event():
 
 # Include routes
 app.include_router(api_router, prefix="/api/v1")
+
+# Static files for question images stored under Backend/data
+data_dir = Path(__file__).resolve().parents[1] / "data"
+if data_dir.exists():
+    app.mount("/api/v1/static", StaticFiles(directory=str(data_dir)), name="static-data")
 
 @app.get("/")
 def root():

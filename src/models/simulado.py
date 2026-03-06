@@ -31,6 +31,9 @@ class Simulado(Base):
     
     # Relacionamento Many-to-Many com questões
     questions = relationship("Question", secondary=simulado_questions)
+
+    # Relacionamento Many-to-Many com turmas
+    turmas = relationship("Turma", secondary="turma_simulados")
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
