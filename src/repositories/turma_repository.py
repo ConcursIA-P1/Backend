@@ -18,6 +18,25 @@ class TurmaRepository:
         """Busca turma por ID."""
         return self.db.query(Turma).filter(Turma.id == turma_id).first()
 
+    def list_by_professor(self, professor_id: UUID) -> list[Turma]:
+        """Lista turmas de um professor."""
+        return (
+            self.db.query(Turma)
+            .filter(Turma.professor_id == professor_id)
+            .order_by(Turma.created_at.desc())
+            .all()
+        )
+
+    def list_by_aluno(self, aluno_id: UUID) -> list[Turma]:
+        """Lista turmas em que um aluno esta matriculado."""
+        return (
+            self.db.query(Turma)
+            .join(Turma.alunos)
+            .filter(User.id == aluno_id)
+            .order_by(Turma.created_at.desc())
+            .all()
+        )
+
     def create(self, nome: str, professor: Optional[User] = None) -> Turma:
         """Cria uma nova turma."""
         turma = Turma(nome=nome, professor=professor)

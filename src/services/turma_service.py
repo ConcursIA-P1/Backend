@@ -36,6 +36,14 @@ class TurmaService:
         """Busca turma por ID."""
         return self.repository.get_by_id(turma_id)
 
+    def list_for_user(self, user_id: UUID, role: UserRole) -> List[Turma]:
+        """Lista turmas para um usuario, respeitando seu papel."""
+        if role == UserRole.PROFESSOR:
+            return self.repository.list_by_professor(user_id)
+        if role == UserRole.ALUNO:
+            return self.repository.list_by_aluno(user_id)
+        return []
+
     def associar_professor(self, turma_id: UUID, professor_id: UUID) -> Optional[Turma]:
         """Associa um professor a uma turma."""
         turma = self.repository.get_by_id(turma_id)

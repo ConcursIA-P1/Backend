@@ -102,6 +102,25 @@ def create_turma(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get(
+    "/mine",
+    response_model=list[TurmaResponse],
+    summary="Lista turmas do usuario autenticado",
+)
+def list_my_turmas(
+    authorization: Optional[str] = Header(None),
+    service: TurmaService = Depends(get_turma_service),
+    db: Session = Depends(get_db),
+):
+    """Lista turmas onde o usuario autenticado participa."""
+    user = _get_current_user(authorization, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Nao autenticado")
+
+    turmas = service.list_for_user(user.id, user.role)
+    return [_to_turma_response(turma) for turma in turmas]
+
+
 @router.post(
     "/{turma_id}/professor",
     response_model=TurmaResponse,
