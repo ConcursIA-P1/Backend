@@ -22,6 +22,12 @@ turma_simulados = Table(
 )
 
 
+def _generate_codigo():
+    import random
+    import string
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
 class Turma(Base):
     """Modelo de turma."""
 
@@ -29,6 +35,7 @@ class Turma(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     nome = Column(String(255), nullable=False)
+    codigo = Column(String(10), unique=True, nullable=True, index=True)
 
     professor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
 

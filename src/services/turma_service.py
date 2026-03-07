@@ -27,7 +27,7 @@ class TurmaService:
             professor = self.user_repository.get_by_id(data.professor_id)
             if not professor:
                 raise ValueError(f"Professor com ID {data.professor_id} não encontrado")
-            if str(professor.role) != UserRole.PROFESSOR.value:
+            if str(professor.role.value) != UserRole.PROFESSOR.value:
                 raise ValueError("Usuário informado não é um professor")
 
         return self.repository.create(nome=data.nome, professor=professor)
@@ -74,6 +74,24 @@ class TurmaService:
             alunos.append(aluno)
 
         return self.repository.add_alunos(turma, alunos)
+
+    def entrar_por_codigo(self, aluno_id: UUID, codigo: str) -> Optional[Turma]:
+        """Aluno entra em turma pelo código."""
+        turma = self.repository.get_by_codigo(codigo)
+        if not turma:
+            return None
+
+        aluno = self.user_repository.get_by_id(aluno_id)
+        if not aluno:
+            raise ValueError("Aluno não encontrado")
+        if str(aluno.role.value) != UserRole.ALUNO.value:
+            raise ValueError("Apenas alunos podem entrar em turmas por código")
+
+        # Verifica se já está na turma
+        if any(a.id == aluno_id for a in turma.alunos):
+            return turma
+
+        return self.repository.add_alunos(turma, [aluno])
 
     def atribuir_simulado(self, turma_id: UUID, simulado_id: UUID) -> Optional[Turma]:
         """Atribui um simulado a uma turma."""

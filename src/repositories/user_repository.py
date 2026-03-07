@@ -73,3 +73,13 @@ class UserRepository:
     def email_exists(self, email: str) -> bool:
         """Verifica se email já existe."""
         return self.db.query(User).filter(User.email == email).first() is not None
+
+    def list_by_role(self, role: UserRole, limit: int = 200) -> list:
+        """Lista usuários por role."""
+        return (
+            self.db.query(User)
+            .filter(User.role == role)
+            .order_by(User.name.asc())
+            .limit(limit)
+            .all()
+        )

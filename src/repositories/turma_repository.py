@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from src.models.turma import Turma
+from src.models.turma import Turma, _generate_codigo
 from src.models.user import User
 from src.models.simulado import Simulado
 
@@ -39,7 +39,8 @@ class TurmaRepository:
 
     def create(self, nome: str, professor: Optional[User] = None) -> Turma:
         """Cria uma nova turma."""
-        turma = Turma(nome=nome, professor=professor)
+        codigo = _generate_codigo()
+        turma = Turma(nome=nome, professor=professor, codigo=codigo)
         self.db.add(turma)
         self.db.commit()
         self.db.refresh(turma)
@@ -61,6 +62,10 @@ class TurmaRepository:
         self.db.commit()
         self.db.refresh(turma)
         return turma
+
+    def get_by_codigo(self, codigo: str) -> Optional[Turma]:
+        """Busca turma por código."""
+        return self.db.query(Turma).filter(Turma.codigo == codigo.upper().strip()).first()
 
     def add_simulado(self, turma: Turma, simulado: Simulado) -> Turma:
         """Atribui um simulado à turma."""

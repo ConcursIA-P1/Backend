@@ -27,6 +27,7 @@ class TurmaResponse(BaseModel):
 
     id: UUID
     nome: str
+    codigo: Optional[str] = None
     professor: Optional[UserResponse] = None
     alunos: List[UserResponse] = Field(default_factory=list)
     created_at: datetime
@@ -50,4 +51,10 @@ class TurmaAlunosRequest(BaseModel):
         min_length=1,
         description="Lista de IDs de alunos a serem associados à turma",
     )
+
+
+class TurmaEntrarRequest(BaseModel):
+    """Request para aluno entrar em turma por código."""
+
+    codigo: str = Field(..., min_length=4, max_length=10, description="Código da turma")
 

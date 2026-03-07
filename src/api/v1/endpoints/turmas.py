@@ -10,6 +10,7 @@ from src.schemas.turma import (
     TurmaResponse,
     TurmaProfessorRequest,
     TurmaAlunosRequest,
+    TurmaEntrarRequest,
 )
 from src.schemas.user import UserResponse
 from src.schemas.simulado import SimuladoMinimal
@@ -66,6 +67,7 @@ def _to_turma_response(turma) -> TurmaResponse:
     return TurmaResponse(
         id=turma.id,
         nome=turma.nome,
+        codigo=turma.codigo,
         professor=professor,
         alunos=alunos,
         created_at=turma.created_at,
@@ -141,6 +143,55 @@ def associar_professor(
 
 
 @router.post(
+    "/entrar",
+    response_model=TurmaResponse,
+    summary="Aluno entra em turma por código",
+)
+def entrar_por_codigo(
+    data: TurmaEntrarRequest,
+    authorization: Optional[str] = Header(None),
+    service: TurmaService = Depends(get_turma_service),
+    db: Session = Depends(get_db),
+):
+    """Aluno entra em turma informando o código."""
+    user = _get_current_user(authorization, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    if user.role.value != UserRole.ALUNO.value:
+        raise HTTPException(status_code=403, detail="Apenas alunos podem entrar em turmas por código")
+
+    try:
+        turma = service.entrar_por_codigo(user.id, data.codigo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not turma:
+        raise HTTPException(status_code=404, detail="Turma não encontrada com esse código")
+
+    return _to_turma_response(turma)
+
+
+@router.get(
+    "/alunos-disponiveis",
+    summary="Lista alunos para professor adicionar à turma",
+)
+def listar_alunos_disponiveis(
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Lista alunos cadastrados (para professor selecionar e adicionar à turma)."""
+    user = _get_current_user(authorization, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    if user.role.value != UserRole.PROFESSOR.value:
+        raise HTTPException(status_code=403, detail="Apenas professores podem listar alunos")
+
+    repo = UserRepository(db)
+    alunos = repo.list_by_role(UserRole.ALUNO)
+    return [_to_user_response(a) for a in alunos]
+
+
+@router.post(
     "/{turma_id}/alunos",
     response_model=TurmaResponse,
     summary="Adiciona alunos a uma turma",
@@ -148,9 +199,19 @@ def associar_professor(
 def adicionar_alunos(
     turma_id: UUID,
     data: TurmaAlunosRequest,
+    authorization: Optional[str] = Header(None),
     service: TurmaService = Depends(get_turma_service),
+    db: Session = Depends(get_db),
 ):
-    """Adiciona alunos a uma turma."""
+    """Adiciona alunos a uma turma (apenas professor da turma)."""
+    user = _get_current_user(authorization, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    turma = service.get_by_id(turma_id)
+    if not turma:
+        raise HTTPException(status_code=404, detail="Turma não encontrada")
+    if user.role != UserRole.PROFESSOR or turma.professor_id != user.id:
+        raise HTTPException(status_code=403, detail="Apenas o professor da turma pode adicionar alunos")
     try:
         turma = service.adicionar_alunos(turma_id, data.alunos_ids)
     except ValueError as e:

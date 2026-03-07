@@ -25,7 +25,7 @@ echo -e "${GREEN}✓ Docker encontrado${NC}"
 # 2. Iniciar PostgreSQL com Docker Compose
 echo ""
 echo "2️⃣  Iniciando PostgreSQL..."
-docker-compose up -d db
+docker compose up -d db
 echo -e "${GREEN}✓ PostgreSQL iniciado${NC}"
 
 # 3. Aguardar PostgreSQL estar pronto
@@ -35,7 +35,7 @@ sleep 5
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if docker-compose exec -T db pg_isready -U concursia -d concursia_db >/dev/null 2>&1; then
+    if docker compose exec -T db pg_isready -U concursia -d concursia_db >/dev/null 2>&1; then
         echo -e "${GREEN}✓ PostgreSQL está pronto${NC}"
         break
     fi
