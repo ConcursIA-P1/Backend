@@ -169,8 +169,13 @@ class SimuladoMinimal(BaseModel):
     id: UUID
     titulo: Optional[str] = None
     total_questoes: int
+    questoes_por_materia: Optional[dict[str, int]] = None
     resultado: Optional[SimuladoResultado] = None
     created_at: datetime
+
+    # Info de turma (preenchido apenas para simulados atribuídos por professor)
+    turma_nome: Optional[str] = None
+    professor_nome: Optional[str] = None
     
     class Config:
         from_attributes = True

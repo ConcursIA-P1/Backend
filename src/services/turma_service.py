@@ -27,7 +27,7 @@ class TurmaService:
             professor = self.user_repository.get_by_id(data.professor_id)
             if not professor:
                 raise ValueError(f"Professor com ID {data.professor_id} não encontrado")
-            if str(professor.role.value) != UserRole.PROFESSOR.value:
+            if professor.role != UserRole.PROFESSOR:
                 raise ValueError("Usuário informado não é um professor")
 
         return self.repository.create(nome=data.nome, professor=professor)
@@ -53,7 +53,7 @@ class TurmaService:
         professor = self.user_repository.get_by_id(professor_id)
         if not professor:
             raise ValueError(f"Professor com ID {professor_id} não encontrado")
-        if str(professor.role) != UserRole.PROFESSOR.value:
+        if professor.role != UserRole.PROFESSOR:
             raise ValueError("Usuário informado não é um professor")
 
         return self.repository.set_professor(turma, professor)
@@ -69,7 +69,7 @@ class TurmaService:
             aluno = self.user_repository.get_by_id(aluno_id)
             if not aluno:
                 raise ValueError(f"Aluno com ID {aluno_id} não encontrado")
-            if str(aluno.role) != UserRole.ALUNO.value:
+            if aluno.role != UserRole.ALUNO:
                 raise ValueError("Usuário informado não é um aluno")
             alunos.append(aluno)
 
@@ -84,7 +84,7 @@ class TurmaService:
         aluno = self.user_repository.get_by_id(aluno_id)
         if not aluno:
             raise ValueError("Aluno não encontrado")
-        if str(aluno.role.value) != UserRole.ALUNO.value:
+        if aluno.role != UserRole.ALUNO:
             raise ValueError("Apenas alunos podem entrar em turmas por código")
 
         # Verifica se já está na turma

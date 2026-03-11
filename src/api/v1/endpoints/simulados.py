@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional
 
 from src.config.database import get_db
 from src.services.simulado_service import SimuladoService
+from src.services.auth_service import AuthService
+from src.repositories.user_repository import UserRepository
+from src.models.user import UserRole
 from src.schemas.simulado import (
     SimuladoCreate,
     SimuladoQuick,
@@ -16,6 +19,20 @@ from src.schemas.simulado import (
 )
 
 router = APIRouter()
+
+
+def _get_current_user(authorization: Optional[str], db: Session):
+    """Retorna usuário autenticado a partir do header Authorization Bearer."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization[7:]
+    auth_service = AuthService(db)
+    user_id = auth_service.verify_token(token)
+    if not user_id:
+        return None
+    from uuid import UUID as _UUID
+    repo = UserRepository(db)
+    return repo.get_by_id(_UUID(user_id))
 
 
 # ============== ENDPOINTS DE GERAÇÃO ==============
@@ -50,6 +67,7 @@ Gera um simulado com configuração detalhada por matéria.
 )
 def generate_simulado(
     data: SimuladoCreate,
+    authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -62,8 +80,9 @@ def generate_simulado(
         - **quantidade**: Número de questões desta matéria
         - **topicos**: Lista opcional de tópicos (distribuição aleatória entre eles)
     """
+    user = _get_current_user(authorization, db)
     service = SimuladoService(db)
-    return service.generate_simulado(data)
+    return service.generate_simulado(data, user_id=user.id if user else None)
 
 
 @router.post(
@@ -79,6 +98,7 @@ Se não especificar matérias, usa todas as disponíveis.
 )
 def generate_quick_simulado(
     data: SimuladoQuick,
+    authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -88,8 +108,9 @@ def generate_quick_simulado(
     - **anos**: Lista opcional de anos para filtrar
     - **materias**: Lista opcional de matérias (se vazio, usa todas)
     """
+    user = _get_current_user(authorization, db)
     service = SimuladoService(db)
-    return service.generate_quick_simulado(data)
+    return service.generate_quick_simulado(data, user_id=user.id if user else None)
 
 
 @router.post(
@@ -125,16 +146,28 @@ def submit_simulado(
 def list_simulados(
     page: int = Query(1, ge=1, description="Número da página"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
+    authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
     """
-    Lista todos os simulados com paginação.
-    
-    Retorna uma lista resumida (sem as questões completas).
-    Para ver as questões, use GET /{simulado_id}.
+    Lista simulados com paginação, filtrados pelo papel do usuário autenticado.
+
+    - **Professor**: vê apenas simulados que ele criou.
+    - **Aluno**: vê simulados que ele gerou + simulados atribuídos às suas turmas.
+    - **Sem auth**: retorna lista vazia.
     """
+    user = _get_current_user(authorization, db)
+    if not user:
+        # Sem autenticação → lista vazia (não expor todos)
+        return SimuladoListResponse(items=[], total=0, page=page, page_size=page_size, pages=0)
+
     service = SimuladoService(db)
-    return service.list_simulados(page=page, page_size=page_size)
+    return service.list_simulados(
+        user_id=user.id,
+        role=user.role,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get(

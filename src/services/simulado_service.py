@@ -19,6 +19,7 @@ from src.schemas.simulado import (
     MateriaConfig,
 )
 from src.schemas.question import MateriaEnum
+from src.models.user import UserRole
 
 
 class SimuladoService:
@@ -219,28 +220,56 @@ class SimuladoService:
     def list_simulados(
         self,
         user_id: Optional[UUID] = None,
+        role: Optional[UserRole] = None,
         page: int = 1,
         page_size: int = 20
     ) -> SimuladoListResponse:
-        """Lista simulados com paginação."""
-        simulados, total = self.repository.get_all(
-            user_id=user_id,
-            page=page,
-            page_size=page_size
-        )
+        """Lista simulados com paginação, respeitando o papel do usuário."""
+
+        if user_id and role == UserRole.PROFESSOR:
+            # Professor vê apenas os que ele criou
+            simulados, total = self.repository.get_all(
+                user_id=user_id,
+                page=page,
+                page_size=page_size,
+            )
+        elif user_id and role == UserRole.ALUNO:
+            # Aluno vê os que criou + os atribuídos às suas turmas
+            simulados, total = self.repository.get_for_aluno(
+                aluno_id=user_id,
+                page=page,
+                page_size=page_size,
+            )
+        else:
+            # Sem auth — fallback (não deveria ocorrer, mas mantém compatibilidade)
+            simulados, total = self.repository.get_all(
+                page=page,
+                page_size=page_size,
+            )
         
         pages = math.ceil(total / page_size) if total > 0 else 0
         
-        items = [
-            SimuladoMinimal(
+        items = []
+        for s in simulados:
+            # Verificar se o simulado pertence a alguma turma (atribuído por professor)
+            turma_nome = None
+            professor_nome = None
+            if s.turmas:
+                turma = s.turmas[0]  # pega a primeira turma associada
+                turma_nome = turma.nome
+                if turma.professor:
+                    professor_nome = turma.professor.name
+
+            items.append(SimuladoMinimal(
                 id=s.id,
                 titulo=s.titulo,
                 total_questoes=len(s.questions),
+                questoes_por_materia=self._count_by_materia(s.questions),
                 resultado=self._extract_resultado(s),
-                created_at=s.created_at
-            )
-            for s in simulados
-        ]
+                created_at=s.created_at,
+                turma_nome=turma_nome,
+                professor_nome=professor_nome,
+            ))
         
         return SimuladoListResponse(
             items=items,

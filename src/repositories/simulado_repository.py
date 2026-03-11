@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from typing import Optional
 from uuid import UUID
 
 from src.models.simulado import Simulado
 from src.models.question import Question, Materia
+from src.models.turma import turma_simulados, turma_alunos
 
 
 class SimuladoRepository:
@@ -66,7 +67,38 @@ class SimuladoRepository:
         simulados = query.order_by(Simulado.created_at.desc()).offset(offset).limit(page_size).all()
         
         return simulados, total
-    
+
+    def get_for_aluno(
+        self,
+        aluno_id: UUID,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Simulado], int]:
+        """
+        Lista simulados visíveis para um aluno:
+        - Simulados criados pelo próprio aluno (user_id == aluno_id)
+        - Simulados atribuídos a turmas em que o aluno participa
+        """
+        # Sub-query: IDs de simulados atribuídos a turmas do aluno
+        turma_sim_ids = (
+            self.db.query(turma_simulados.c.simulado_id)
+            .join(turma_alunos, turma_simulados.c.turma_id == turma_alunos.c.turma_id)
+            .filter(turma_alunos.c.aluno_id == aluno_id)
+            .subquery()
+        )
+
+        query = self.db.query(Simulado).filter(
+            or_(
+                Simulado.user_id == aluno_id,
+                Simulado.id.in_(turma_sim_ids),
+            )
+        )
+
+        total = query.count()
+        offset = (page - 1) * page_size
+        simulados = query.order_by(Simulado.created_at.desc()).offset(offset).limit(page_size).all()
+        return simulados, total
+
     # ============== DELETE ==============
     
     def delete(self, simulado_id: UUID) -> bool:
